@@ -29,5 +29,9 @@ if (with_spin)
     set(bias_camera_facade_link_libs ${bias_camera_facade_link_libs} bias_backend_spin)
 endif()
 
+if (with_avf)
+    set(bias_camera_facade_link_libs ${bias_camera_facade_link_libs} bias_backend_avf)
+endif()
+
 target_link_libraries(bias_camera_facade ${bias_camera_facade_link_libs})
 

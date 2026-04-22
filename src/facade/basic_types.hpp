@@ -6,11 +6,12 @@
 
 namespace bias {
 
-    enum CameraLib 
+    enum CameraLib
     {
         CAMERA_LIB_FC2=0,
         CAMERA_LIB_DC1394,
         CAMERA_LIB_SPIN,
+        CAMERA_LIB_AVF,
         CAMERA_LIB_UNDEFINED,
         NUMBER_OF_CAMERA_LIB,
     };
@@ -194,6 +195,15 @@ namespace bias {
         ERROR_SPIN_SET_TRIGGER_EXTERNAL,
         ERROR_SPIN_SET_TRIGGER_INTERNAL,
         ERROR_SPIN_GET_TRIGGER_TYPE,
+
+        // AVFoundation specific errors
+        ERROR_NO_AVF,
+        ERROR_AVF_DEVICE_NOT_FOUND,
+        ERROR_AVF_AUTHORIZATION_DENIED,
+        ERROR_AVF_CREATE_INPUT,
+        ERROR_AVF_NO_BGRA_FORMAT,
+        ERROR_AVF_START_CAPTURE,
+        ERROR_AVF_NOT_CONNECTED,
 
         // Video Writer Errors
         ERROR_VIDEO_WRITER_ADD_FRAME,

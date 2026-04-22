@@ -15,6 +15,9 @@
 #ifdef WITH_SPIN
 #include "camera_device_spin.hpp"
 #endif
+#ifdef WITH_AVF
+#include "camera_device_avf.hpp"
+#endif
 
 namespace bias {
 
@@ -39,6 +42,10 @@ namespace bias {
 
             case CAMERA_LIB_SPIN:
                 createCameraDevice_spin(guid);
+                break;
+
+            case CAMERA_LIB_AVF:
+                createCameraDevice_avf(guid);
                 break;
 
             case CAMERA_LIB_UNDEFINED:
@@ -779,12 +786,30 @@ namespace bias {
     }
 
 #else
-    // Dummy methods for when the library isn't included - allows the ifdefs 
+    // Dummy methods for when the library isn't included - allows the ifdefs
     // to  be limited to two locations.
 
     void Camera::createCameraDevice_spin(Guid guid)
     {
         throw_ERROR_NO_SPIN(std::string(__PRETTY_FUNCTION__));
+    }
+
+#endif
+
+    // AVFoundation specific methods
+    // -----------------------------------------------------------------------
+#ifdef WITH_AVF
+
+    void Camera::createCameraDevice_avf(Guid guid)
+    {
+        cameraDevicePtr_ = std::make_shared<CameraDevice_avf>(guid);
+    }
+
+#else
+
+    void Camera::createCameraDevice_avf(Guid guid)
+    {
+        throw_ERROR_NO_AVF(std::string(__PRETTY_FUNCTION__));
     }
 
 #endif

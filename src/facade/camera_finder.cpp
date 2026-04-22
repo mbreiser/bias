@@ -7,27 +7,30 @@
 
 namespace bias {
 
-    CameraFinder::CameraFinder() 
+    CameraFinder::CameraFinder()
     {
         createQueryContext_fc2();
         createQueryContext_dc1394();
         createQueryContext_spin();
+        createQueryContext_avf();
         update();
     };
 
-    CameraFinder::~CameraFinder() 
+    CameraFinder::~CameraFinder()
     {
         destroyQueryContext_fc2();
         destroyQueryContext_dc1394();
         destroyQueryContext_spin();
+        destroyQueryContext_avf();
     };
 
-    void CameraFinder::update() 
+    void CameraFinder::update()
     {
         guidSet_.clear();
         update_fc2();
         update_dc1394();
         update_spin();
+        update_avf();
     }
 
     void CameraFinder::printGuid() 
@@ -387,6 +390,28 @@ namespace bias {
     void CameraFinder::createQueryContext_spin() {}
     void CameraFinder::destroyQueryContext_spin() {}
     void CameraFinder::update_spin() {}
+
+#endif
+
+#ifdef WITH_AVF
+
+    // AVFoundation specific features
+    // ------------------------------------------------------------------------
+    // Enumeration is implemented in src/backend/avf/camera_finder_avf.mm
+    // (Obj-C++). Stage 1 leaves these as stubs.
+
+    void CameraFinder::createQueryContext_avf() {}
+    void CameraFinder::destroyQueryContext_avf() {}
+    void CameraFinder::update_avf() {}
+
+#else
+
+    // Dummy methods for when AVFoundation is not included
+    // ------------------------------------------------------------------------
+
+    void CameraFinder::createQueryContext_avf() {}
+    void CameraFinder::destroyQueryContext_avf() {}
+    void CameraFinder::update_avf() {}
 
 #endif
 

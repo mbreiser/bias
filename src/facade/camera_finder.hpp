@@ -48,10 +48,14 @@ namespace bias {
             void createQueryContext_spin();
             void destroyQueryContext_spin();
 
+            void createQueryContext_avf();
+            void destroyQueryContext_avf();
+
             void update();
             void update_fc2();
             void update_dc1394();
             void update_spin();
+            void update_avf();
 
 #ifdef WITH_FC2
         private:

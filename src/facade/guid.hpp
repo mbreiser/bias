@@ -22,6 +22,10 @@
 #include "guid_device_spin.hpp"
 #endif
 
+#ifdef WITH_AVF
+#include "guid_device_avf.hpp"
+#endif
+
 
 namespace bias {
     
@@ -69,7 +73,13 @@ namespace bias {
             explicit Guid(std::string guidStr);
             std::string getValue_spin();
 #endif
-           
+#ifdef WITH_AVF
+        // AVFoundation specific features
+        public:
+            explicit Guid(GuidDevicePtr_avf avfPtr);
+            std::string getValue_avf();
+#endif
+
     };
 
     class GuidCmp : public std::binary_function<Guid, Guid, bool>

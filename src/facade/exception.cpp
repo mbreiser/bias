@@ -35,8 +35,16 @@ namespace bias {
     {
         std::stringstream ssError;
         ssError << prettyFunctionStr;
-        ssError << ": FlyCapure2 libary not present";
+        ssError << ": Spinnaker library not present";
         throw RuntimeError(ERROR_NO_SPIN, ssError.str());
+    }
+
+    void throw_ERROR_NO_AVF(std::string prettyFunctionStr)
+    {
+        std::stringstream ssError;
+        ssError << prettyFunctionStr;
+        ssError << ": AVFoundation backend not compiled in";
+        throw RuntimeError(ERROR_NO_AVF, ssError.str());
     }
 
 }

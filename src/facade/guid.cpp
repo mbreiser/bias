@@ -138,6 +138,27 @@ namespace bias {
     };
 
 #endif
+
+#ifdef WITH_AVF
+
+    // AVFoundation specific methods
+    // ------------------------------------------------------------------------
+    Guid::Guid(GuidDevicePtr_avf avfPtr)
+    {
+        guidDevicePtr_ = avfPtr;
+    }
+
+    std::string Guid::getValue_avf()
+    {
+        if (getCameraLib() == CAMERA_LIB_AVF)
+        {
+            auto p = std::dynamic_pointer_cast<GuidDevice_avf>(guidDevicePtr_);
+            return p->getValue();
+        }
+        return std::string();
+    }
+
+#endif
     
     // Guid comparison operator
     // ------------------------------------------------------------------------

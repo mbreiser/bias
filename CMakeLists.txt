@@ -24,25 +24,29 @@ endif()
 
 # Options
 # -----------------------------------------------------------------------------
-option(with_qt_gui  "include image acquisition GUI"   ON) 
+option(with_qt_gui  "include image acquisition GUI"   ON)
 option(with_fc2     "include the FlyCapture2 backend" OFF)
 option(with_dc1394  "include the libdc1394 backend"   OFF)
 option(with_spin    "include the spin backend"   ON)
 option(with_demos   "include demos" OFF)
 option(with_tests   "include tests" OFF)
 
+if(APPLE)
+    option(with_avf "include the AVFoundation backend" ON)
+else()
+    option(with_avf "include the AVFoundation backend" OFF)
+endif()
+
 message(STATUS "Option: with_fc2     = ${with_fc2}")
 message(STATUS "Option: with_dc1394  = ${with_dc1394}")
+message(STATUS "Option: with_spin    = ${with_spin}")
+message(STATUS "Option: with_avf     = ${with_avf}")
 message(STATUS "Option: with_qt_gui  = ${with_qt_gui}")
 message(STATUS "Option: with_demos   = ${with_demos}")
-message(STATUS "Option: with_tests   = ${with_tests}") 
+message(STATUS "Option: with_tests   = ${with_tests}")
 
-if( NOT( with_fc2 OR with_dc1394 OR with_spin) )
-    if(APPLE)
-        message(STATUS "macOS build: no camera backend compiled in (Phase 1 skeleton build)")
-    else()
-        message(FATAL_ERROR "there must be at least one camera backend")
-    endif()
+if( NOT( with_fc2 OR with_dc1394 OR with_spin OR with_avf) )
+    message(FATAL_ERROR "there must be at least one camera backend")
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
@@ -116,6 +120,10 @@ if(with_dc1394)
     add_definitions(-DWITH_DC1394)
 endif()
 
+if(with_avf)
+    add_definitions(-DWITH_AVF)
+endif()
+
 
 # Include directories
 # -----------------------------------------------------------------------------
@@ -141,9 +149,13 @@ endif()
 
 if(with_dc1394)
     include_directories("./src/backend/dc1394")
-    # Add custom libdc1394 
+    # Add custom libdc1394
     #include_directories("/home/wbd/local/include")
     #link_directories("/home/wbd/local/lib")
+endif()
+
+if(with_avf)
+    include_directories("./src/backend/avf")
 endif()
 
 message(STATUS "Debug 1")
@@ -190,6 +202,10 @@ endif()
 
 if(with_spin)
     add_subdirectory("src/backend/spin")
+endif()
+
+if(with_avf)
+    add_subdirectory("src/backend/avf")
 endif()
 
 add_subdirectory("src/facade")
