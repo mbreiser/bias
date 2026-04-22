@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.16)
 
 project(grab_detector_plugin)
 if (POLICY CMP0020)
@@ -35,7 +35,6 @@ add_library(
     ${grab_detector_plugin_SOURCES} 
     )
 
-add_dependencies(grab_detector_plugin ${grab_detector_plugin_FORMS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(.)
 target_link_libraries(

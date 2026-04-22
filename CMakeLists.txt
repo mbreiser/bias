@@ -1,10 +1,25 @@
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR) 
+cmake_minimum_required(VERSION 3.16)
 project(bais)
 
-if (POLICY CMP0020) 
+if (POLICY CMP0020)
     cmake_policy(SET CMP0020 NEW)
 endif()
 #cmake_policy(SET CMP0046 OLD)
+
+# macOS defaults
+# -----------------------------------------------------------------------------
+if(APPLE)
+    if(NOT CMAKE_OSX_DEPLOYMENT_TARGET)
+        set(CMAKE_OSX_DEPLOYMENT_TARGET "15.0" CACHE STRING
+            "Minimum macOS version (Sequoia)" FORCE)
+    endif()
+    if(NOT CMAKE_OSX_ARCHITECTURES)
+        set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING
+            "macOS build architecture (Apple Silicon)" FORCE)
+    endif()
+    message(STATUS "macOS build: arch=${CMAKE_OSX_ARCHITECTURES}, deployment target=${CMAKE_OSX_DEPLOYMENT_TARGET}")
+    message(STATUS "macOS build: fc2/dc1394/spin backends default OFF; configure with -Dwith_fc2=OFF -Dwith_spin=OFF -Dwith_dc1394=OFF")
+endif()
 
 
 # Options
@@ -23,7 +38,11 @@ message(STATUS "Option: with_demos   = ${with_demos}")
 message(STATUS "Option: with_tests   = ${with_tests}") 
 
 if( NOT( with_fc2 OR with_dc1394 OR with_spin) )
-    message(FATAL_ERROR "their must be at least one camera backend")
+    if(APPLE)
+        message(STATUS "macOS build: no camera backend compiled in (Phase 1 skeleton build)")
+    else()
+        message(FATAL_ERROR "there must be at least one camera backend")
+    endif()
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
@@ -35,7 +54,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Mod
 find_package( OpenCV REQUIRED )
 
 if(${OpenCV_FOUND})
-    message(STATUS "OpenCV found")
+    message(STATUS "OpenCV found: ${OpenCV_VERSION} at ${OpenCV_INCLUDE_DIRS}")
+    include_directories(${OpenCV_INCLUDE_DIRS})
 else()
     message(STATUS "OpenCv not found")
 endif()
@@ -75,9 +95,9 @@ endif()
 
 # Compiler flags
 # -----------------------------------------------------------------------------
-#set(CMAKE_CXX_FLAGS "-std=gnu++0x -O2 -Wall")
-set(CMAKE_CXX_FLAGS "-std=gnu++0x -O2")
-#set(CMAKE_CXX_FLAGS "-std=gnu++0x -mwindows -O2")
+#set(CMAKE_CXX_FLAGS "-std=c++14 -O2 -Wall")
+set(CMAKE_CXX_FLAGS "-std=c++14 -O2")
+#set(CMAKE_CXX_FLAGS "-std=c++14 -mwindows -O2")
 
 
 # Definitions 

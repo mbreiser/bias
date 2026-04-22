@@ -1,7 +1,7 @@
 #ifndef FRAME_DATA_HPP
 #define FRAME_DATA_HPP
 
-#include <cv.h>
+#include <opencv2/core.hpp>
 #include <QQueue>
 #include <QSharedPointer>
 

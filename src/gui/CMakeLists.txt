@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.16)
 
 project(bias_gui)
 if (POLICY CMP0020)
@@ -100,7 +100,6 @@ add_executable(
     ${bias_gui_SOURCES} 
     )
 
-add_dependencies(test_gui ${bias_gui_FORMS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(.)
 target_link_libraries(

@@ -1,5 +1,6 @@
 #include "basic_image_proc.hpp"
 #include <opencv2/imgproc/imgproc.hpp>
+#include "opencv4_compat.hpp"
 #include <vector>
 #include <iostream>
 

@@ -2,6 +2,7 @@
 #include "basic_types.hpp"
 #include "exception.hpp"
 #include <opencv2/highgui/highgui.hpp>
+#include "opencv4_compat.hpp"
 #include <iostream>
 
 namespace bias

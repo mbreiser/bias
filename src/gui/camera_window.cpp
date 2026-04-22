@@ -45,6 +45,7 @@
 #include <QMessageBox>
 #include <QDesktopWidget>
 #include <QFileDialog>
+#include <QStandardPaths>
 // ---------------------------
 
 #include <opencv2/core/core.hpp>
@@ -3006,10 +3007,13 @@ namespace bias
         {
             defaultConfigFileDir_ = userProfileDir;
         }
+#elif defined(Q_OS_MAC)
+        defaultVideoFileDir_  = QDir(QStandardPaths::writableLocation(QStandardPaths::MoviesLocation));
+        defaultConfigFileDir_ = QDir(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation));
 #else
         defaultVideoFileDir_ = QDir(QString(getenv("HOME")));
         defaultConfigFileDir_ = QDir(QString(getenv("HOME")));
-#endif 
+#endif
         // Check that default video file directory exists
         if (!defaultVideoFileDir_.exists())
         {

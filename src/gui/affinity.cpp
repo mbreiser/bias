@@ -19,8 +19,6 @@ namespace bias
     
     bool ThreadAffinityService::assignThreadAffinity(bool isImageGrabber, unsigned int cameraNumber)
     {
-        bool rval;
-
         if (numberOfCameras_ == 0)
         {
             return false;
@@ -31,6 +29,7 @@ namespace bias
         }
 
 #ifdef WIN32
+        bool rval;
 
         DWORD_PTR availProcMask;
         DWORD_PTR systemMask;

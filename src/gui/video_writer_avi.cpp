@@ -1,6 +1,7 @@
 #include "video_writer_avi.hpp"
 #include "basic_types.hpp"
 #include "exception.hpp"
+#include "opencv4_compat.hpp"
 #include <QFileInfo>
 #include <QDir>
 #include <iostream>
