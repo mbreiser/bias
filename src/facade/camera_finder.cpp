@@ -4,6 +4,10 @@
 #include "camera.hpp"
 #include <iostream>
 #include <sstream>
+#ifdef WITH_AVF
+#include "camera_finder_avf.hpp"
+#include "guid_device_avf.hpp"
+#endif
 
 namespace bias {
 
@@ -397,12 +401,20 @@ namespace bias {
 
     // AVFoundation specific features
     // ------------------------------------------------------------------------
-    // Enumeration is implemented in src/backend/avf/camera_finder_avf.mm
-    // (Obj-C++). Stage 1 leaves these as stubs.
+    // Enumeration delegates to an Obj-C++ helper in src/backend/avf/
+    // that wraps AVCaptureDeviceDiscoverySession.
 
     void CameraFinder::createQueryContext_avf() {}
     void CameraFinder::destroyQueryContext_avf() {}
-    void CameraFinder::update_avf() {}
+
+    void CameraFinder::update_avf()
+    {
+        for (const std::string &uid : avf::discoverDeviceUniqueIDs())
+        {
+            auto devPtr = std::make_shared<GuidDevice_avf>(uid);
+            guidSet_.insert(Guid(devPtr));
+        }
+    }
 
 #else
 

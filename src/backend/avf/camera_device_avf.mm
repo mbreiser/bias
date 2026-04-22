@@ -1,28 +1,56 @@
 #ifdef WITH_AVF
 
 #include "camera_device_avf.hpp"
-#include "exception.hpp"
-#include <sstream>
+#include <opencv2/core.hpp>
 
 namespace bias {
 
     CameraDevice_avf::CameraDevice_avf() : CameraDevice() {}
 
-    CameraDevice_avf::CameraDevice_avf(Guid guid) : CameraDevice(guid)
-    {
-        // Stage 1: enumeration is not wired up yet, so this constructor
-        // is unreachable in practice. Stage 3 will resolve the AVCaptureDevice
-        // from the guid's unique ID and prepare the capture session.
-        std::stringstream ss;
-        ss << __PRETTY_FUNCTION__ << ": AVFoundation capture not yet implemented";
-        throw RuntimeError(ERROR_AVF_DEVICE_NOT_FOUND, ss.str());
-    }
+    CameraDevice_avf::CameraDevice_avf(Guid guid) : CameraDevice(guid) {}
 
-    CameraDevice_avf::~CameraDevice_avf() {}
+    CameraDevice_avf::~CameraDevice_avf()
+    {
+        if (capturing_) { stopCapture(); }
+        if (connected_) { disconnect(); }
+    }
 
     CameraLib CameraDevice_avf::getCameraLib()
     {
         return CAMERA_LIB_AVF;
+    }
+
+    void CameraDevice_avf::connect()
+    {
+        // Stage 3 will resolve the AVCaptureDevice from guid_ and build the
+        // AVCaptureSession. For now, just mark as connected so the GUI wiring
+        // lights up.
+        connected_ = true;
+    }
+
+    void CameraDevice_avf::disconnect()
+    {
+        connected_ = false;
+    }
+
+    void CameraDevice_avf::startCapture()
+    {
+        capturing_ = true;
+    }
+
+    void CameraDevice_avf::stopCapture()
+    {
+        capturing_ = false;
+    }
+
+    cv::Mat CameraDevice_avf::grabImage()
+    {
+        return cv::Mat();
+    }
+
+    void CameraDevice_avf::grabImage(cv::Mat &image)
+    {
+        image = cv::Mat();
     }
 
     std::string CameraDevice_avf::getVendorName()

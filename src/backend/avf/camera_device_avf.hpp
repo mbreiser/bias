@@ -7,15 +7,24 @@
 
 namespace bias {
 
-    // Stage 1 stub: declared so the facade can link, but constructing one
-    // throws RuntimeError until Stage 3 lands the AVCaptureSession plumbing.
+    // Stage 2: constructor succeeds, but connect/startCapture/grabImage are
+    // still stubs. Stage 3 wires up the AVCaptureSession.
     class CameraDevice_avf : public CameraDevice
     {
         public:
             CameraDevice_avf();
             explicit CameraDevice_avf(Guid guid);
             virtual ~CameraDevice_avf();
+
             virtual CameraLib getCameraLib();
+
+            virtual void connect();
+            virtual void disconnect();
+            virtual void startCapture();
+            virtual void stopCapture();
+            virtual cv::Mat grabImage();
+            virtual void grabImage(cv::Mat &image);
+
             virtual std::string getVendorName();
             virtual std::string getModelName();
     };

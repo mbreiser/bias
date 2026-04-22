@@ -9,6 +9,7 @@ set(
     utils_avf.mm
     guid_device_avf.mm
     camera_device_avf.mm
+    camera_finder_avf.mm
     )
 
 add_library(bias_backend_avf ${bias_backend_avf_SOURCE})
