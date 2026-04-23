@@ -166,3 +166,36 @@ curl "http://127.0.0.1:5010/?disconnect"
 ```
 
 Query-string style; `?` is required between the path and the command name.
+
+### Three quirks of BIAS's HTTP server (baked into the scripts)
+
+1. **URL decoder is case-sensitive on hex.** `ESCAPE_TO_CHAR_MAP` in
+   [src/utility/basic_http_server.cpp](../src/utility/basic_http_server.cpp)
+   uses `%7B`/`%22`/etc. (uppercase), so `curl --data-urlencode`'s
+   lowercase `%7b`/`%22`/etc. comes through as literal text and breaks
+   JSON parsing. Encode with Python's `urllib.parse.quote` (uppercase
+   by default) — see `scripts/phase3_record.sh` `post_set_configuration()`.
+
+2. **`/?set-configuration` with the full config round-trip may fail**
+   on backends whose camera-side settings can't be re-applied
+   (setCameraFromMap throws). Send a `{"logging": {...}}` partial and
+   let [camera_window.cpp:1121-1124](../src/gui/camera_window.cpp) fall
+   back to `oldConfigMap` for the omitted sections.
+
+3. **`/?get-configuration` returns "camera is not connected"** until
+   after `/?connect`. Always connect first.
+
+## FLIR / Spinnaker SDK (Phase 5)
+
+Installs to `/Applications/Spinnaker/` on macOS, NOT
+`/Library/Frameworks/`. Versions 4.1+ are required for Apple Silicon
+native (we verified 4.3.0.189). The `.pkg` isn't notarized so Gatekeeper
+will block double-click; bypass with:
+
+```sh
+xattr -d com.apple.quarantine ~/Downloads/Spinnaker-*.pkg
+sudo installer -pkg ~/Downloads/Spinnaker-*.pkg -target /
+```
+
+Full install-layout mapping and Phase 5 work plan:
+[docs/phase5-spinnaker-plan.md](phase5-spinnaker-plan.md).

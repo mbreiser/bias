@@ -1,6 +1,29 @@
 # BIAS macOS Port — Roadmap & Test Plan
 
-Status: proposed, not yet started. Target branch: `claude/review-fork-port-strategy-4iMKH`.
+Target branch: `claude/review-fork-port-strategy-4iMKH` (on fork
+`mbreiser/bias`).
+
+## Status (2026-04-23)
+
+| Phase | State | Notes |
+|---|---|---|
+| **0 — Dev environment** | ✅ done | [docs/macos-dev-setup.md](macos-dev-setup.md). Commit `9977d1d`. |
+| **1 — Minimal compile & launch** | ✅ done | `test_gui.app` builds + launches on macOS Tahoe / arm64. Commit `9977d1d`. |
+| **2 — AVFoundation backend** | ✅ done | Live preview from FaceTime / C922 / iPhone Continuity at 30 fps. Commits `6d470f5`, `fdc6de5`, `a7335cd`, `5ccc954`, `cb91206`, `c955bbf`. |
+| **3 — uFMF end-to-end validation** | ✅ done | 60 s / 1783 frames / 2.11 GB / reader-validated. [docs/phase3-ufmf-validation.md](phase3-ufmf-validation.md). Commit `d01e3f0`. |
+| **4 — `.app` bundle polish** | ⏸ deferred | Ad-hoc signed + Info.plist already in place (pulled forward from Phase 2). Remaining: `macdeployqt` / `fixup_bundle` for `/opt/homebrew/*` dylibs → `@rpath/`. Only needed for handoff to other Macs. |
+| **5 — Spinnaker (FLIR)** | 🔨 starting | **Real goal:** feasibility of running lab experiments on Mac. SDK 4.3.0.189 installed. [docs/phase5-spinnaker-plan.md](phase5-spinnaker-plan.md). |
+| **6 — Basler / pylon** | ⏸ later | Only if a second industrial backend is actually needed. |
+| **7 — Plugins** | ⏸ rig-dependent | `signal_slot_demo` ≈ free; `grab_detector` / `stampede` hardware-gated. |
+
+Phase-3 tooling under `scripts/` is reusable unchanged for Phase 5:
+- `scripts/ufmf_read.py` — independent uFMF v4 reader.
+- `scripts/phase3_record.sh` — record uFMF + AVI, validate via reader.
+- `scripts/http_smoke_test.sh` — 32-point HTTP control suite.
+
+---
+
+## Original plan (unchanged below this line)
 
 ## Context
 
