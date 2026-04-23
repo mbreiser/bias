@@ -4,11 +4,12 @@
 
 #include "camera_device.hpp"
 #include "guid.hpp"
+#include <memory>
 
 namespace bias {
 
-    // Stage 2: constructor succeeds, but connect/startCapture/grabImage are
-    // still stubs. Stage 3 wires up the AVCaptureSession.
+    struct CameraDevice_avf_Impl;  // opaque, defined in camera_device_avf.mm
+
     class CameraDevice_avf : public CameraDevice
     {
         public:
@@ -27,6 +28,10 @@ namespace bias {
 
             virtual std::string getVendorName();
             virtual std::string getModelName();
+
+        private:
+            std::unique_ptr<CameraDevice_avf_Impl> impl_;
+            std::string modelName_;
     };
 
 }

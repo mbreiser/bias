@@ -93,12 +93,32 @@ set(
 qt5_wrap_ui(bias_gui_FORMS_HEADERS ${bias_gui_FORMS}) 
 qt5_wrap_cpp(bias_gui_HEADERS_MOC ${bias_gui_HEADERS})
 
-add_executable(
-    test_gui 
-    ${bias_gui_HEADERS_MOC}
-    ${bias_gui_FORMS_HEADERS} 
-    ${bias_gui_SOURCES} 
-    )
+if(APPLE)
+    add_executable(test_gui MACOSX_BUNDLE
+        ${bias_gui_HEADERS_MOC}
+        ${bias_gui_FORMS_HEADERS}
+        ${bias_gui_SOURCES}
+        )
+    set_target_properties(test_gui PROPERTIES
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/test_gui.Info.plist"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "org.janelia.bias.test_gui"
+        MACOSX_BUNDLE_BUNDLE_NAME "BIAS"
+        MACOSX_BUNDLE_BUNDLE_VERSION "0.1"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "0.1"
+        )
+    # After linking, force a proper ad-hoc signature so TCC uses the bundle's
+    # Info.plist at permission-request time.
+    add_custom_command(TARGET test_gui POST_BUILD
+        COMMAND codesign --force --sign - --identifier org.janelia.bias.test_gui $<TARGET_BUNDLE_DIR:test_gui>
+        COMMENT "Ad-hoc signing test_gui.app"
+        )
+else()
+    add_executable(test_gui
+        ${bias_gui_HEADERS_MOC}
+        ${bias_gui_FORMS_HEADERS}
+        ${bias_gui_SOURCES}
+        )
+endif()
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(.)

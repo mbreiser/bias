@@ -3928,7 +3928,10 @@ namespace bias
 
         // Temporary - for disabling trigger mode property
         // ------------------------------------------------
-        triggerModeActionPtr -> setEnabled(false);
+        if (triggerModeActionPtr)
+        {
+            triggerModeActionPtr -> setEnabled(false);
+        }
         // ------------------------------------------------
        
     }
