@@ -220,11 +220,11 @@ rsp=$(hit "?get-frames-per-sec")
 check "get-frames-per-sec (numeric)" \
     '.[0].success == true and ((.[0].value | type) == "number")' "$rsp"
 
-# KNOWN limitation: AVF backend doesn't override getImageTimeStamp yet,
-# so timestamp remains ~0. Next commit (the timestamp override) will
-# flip this from KNOWN to PASS.
+# AVF timestamp is derived from CMSampleBufferGetPresentationTimeStamp
+# and converted to BIAS's TimeStamp (sec, usec). After ~3 s of capture
+# the grabber-observed elapsed timestamp should be > 0.
 rsp=$(hit "?get-time-stamp")
-check "KNOWN:get-time-stamp (AVF ~0 pre-override)" \
+check "get-time-stamp (> 0 after capture)" \
     '.[0].success == true and ((.[0].value | type) == "number") and (.[0].value | tonumber > 0.01)' "$rsp"
 
 rsp=$(hit "?stop-capture")

@@ -50,6 +50,8 @@ namespace bias {
             virtual TriggerType getTriggerType();
             virtual ImageInfo getImageInfo();
 
+            virtual TimeStamp getImageTimeStamp();
+
             virtual std::string getVendorName();
             virtual std::string getModelName();
 

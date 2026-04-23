@@ -53,6 +53,12 @@ namespace bias {
 
         std::mutex frameMutex;
         cv::Mat latestFrame;
+        // Timestamp paired with latestFrame. lastGrabbed is what
+        // getImageTimeStamp returns to the caller — it persists after
+        // grabImage consumes latestFrame, so the grabber can read it
+        // in its characteristic "grabImage then getImageTimeStamp" pair.
+        TimeStamp latestTimeStamp{0, 0};
+        TimeStamp lastGrabbedTimeStamp{0, 0};
     };
 
 }
@@ -85,6 +91,22 @@ namespace bias {
     if (!imageBuffer) {
         bias_avf_trace("fire %d: NULL imageBuffer", fireCount);
         return;
+    }
+
+    // Convert AVF's CMTime presentation timestamp into a BIAS TimeStamp
+    // (seconds, microSeconds). CMTimeConvertScale does the rational
+    // arithmetic safely; a negative or invalid time comes through as
+    // {0,0}, which the grabber treats as "start of capture".
+    bias::TimeStamp bt{0, 0};
+    {
+        CMTime pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer);
+        if (CMTIME_IS_VALID(pts) && pts.value > 0 && pts.timescale > 0) {
+            CMTime us = CMTimeConvertScale(pts, 1000000, kCMTimeRoundingMethod_Default);
+            int64_t total_us = us.value;
+            if (total_us < 0) { total_us = 0; }
+            bt.seconds = (unsigned long long)(total_us / 1000000);
+            bt.microSeconds = (unsigned int)(total_us % 1000000);
+        }
     }
 
     OSType pf = CVPixelBufferGetPixelFormatType(imageBuffer);
@@ -130,6 +152,7 @@ namespace bias {
     if (!gray.empty()) {
         std::lock_guard<std::mutex> lock(impl_->frameMutex);
         impl_->latestFrame = gray;  // overwrites any un-consumed prior frame
+        impl_->latestTimeStamp = bt;
     }
 }
 
@@ -368,7 +391,16 @@ namespace bias {
         {
             image = impl_->latestFrame;   // cheap: cv::Mat = shared reference to the pixel data
             impl_->latestFrame = cv::Mat();  // consume — next frame will be set by the delegate
+            // Pair the timestamp with the consumed frame so the grabber's
+            // follow-up getImageTimeStamp() returns the right value.
+            impl_->lastGrabbedTimeStamp = impl_->latestTimeStamp;
         }
+    }
+
+    TimeStamp CameraDevice_avf::getImageTimeStamp()
+    {
+        std::lock_guard<std::mutex> lock(impl_->frameMutex);
+        return impl_->lastGrabbedTimeStamp;
     }
 
     std::string CameraDevice_avf::getVendorName()
