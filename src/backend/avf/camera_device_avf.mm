@@ -209,6 +209,17 @@ namespace bias {
             impl_->device = device;
             modelName_ = nsstring_to_std(device.localizedName);
 
+            // Capture native dimensions from the device's active format so
+            // getFormat7Info/getImageInfo can report them. This is what
+            // BIAS's setCameraFromMap uses when round-tripping configs.
+            if (device.activeFormat) {
+                CMVideoDimensions dims = CMVideoFormatDescriptionGetDimensions(
+                    device.activeFormat.formatDescription);
+                width_ = (unsigned int)dims.width;
+                height_ = (unsigned int)dims.height;
+                bias_avf_trace("[bias.avf] device active format %ux%u", width_, height_);
+            }
+
             NSError *err = nil;
             AVCaptureDeviceInput *input =
                 [AVCaptureDeviceInput deviceInputWithDevice:device error:&err];
@@ -368,6 +379,136 @@ namespace bias {
     std::string CameraDevice_avf::getModelName()
     {
         return modelName_.empty() ? std::string("AVFoundation") : modelName_;
+    }
+
+    // --- Minimum reporting methods so BIAS's setCameraFromMap round-trips ---
+
+    bool CameraDevice_avf::isColor()
+    {
+        // We convert everything to MONO8 in the delegate, so from BIAS's
+        // perspective the stream is monochrome.
+        return false;
+    }
+
+    bool CameraDevice_avf::isSupported(VideoMode vidMode, FrameRate frmRate)
+    {
+        return vidMode == VIDEOMODE_FORMAT7 && frmRate == FRAMERATE_FORMAT7;
+    }
+
+    bool CameraDevice_avf::isSupported(ImageMode imgMode)
+    {
+        return imgMode == IMAGEMODE_0;
+    }
+
+    unsigned int CameraDevice_avf::getNumberOfImageMode()
+    {
+        return 1;
+    }
+
+    VideoMode CameraDevice_avf::getVideoMode()
+    {
+        return VIDEOMODE_FORMAT7;
+    }
+
+    FrameRate CameraDevice_avf::getFrameRate()
+    {
+        return FRAMERATE_FORMAT7;
+    }
+
+    ImageMode CameraDevice_avf::getImageMode()
+    {
+        return IMAGEMODE_0;
+    }
+
+    VideoModeList CameraDevice_avf::getAllowedVideoModes()
+    {
+        VideoModeList list;
+        list.push_back(VIDEOMODE_FORMAT7);
+        return list;
+    }
+
+    FrameRateList CameraDevice_avf::getAllowedFrameRates(VideoMode /*vidMode*/)
+    {
+        FrameRateList list;
+        list.push_back(FRAMERATE_FORMAT7);
+        return list;
+    }
+
+    ImageModeList CameraDevice_avf::getAllowedImageModes()
+    {
+        ImageModeList list;
+        list.push_back(IMAGEMODE_0);
+        return list;
+    }
+
+    Format7Settings CameraDevice_avf::getFormat7Settings()
+    {
+        Format7Settings s;
+        s.mode = IMAGEMODE_0;
+        s.offsetX = 0;
+        s.offsetY = 0;
+        s.width = width_;
+        s.height = height_;
+        s.pixelFormat = PIXEL_FORMAT_MONO8;
+        return s;
+    }
+
+    Format7Info CameraDevice_avf::getFormat7Info(ImageMode /*imgMode*/)
+    {
+        Format7Info info;
+        info.mode = IMAGEMODE_0;
+        info.supported = true;
+        info.maxWidth = width_ > 0 ? width_ : 1;
+        info.maxHeight = height_ > 0 ? height_ : 1;
+        info.offsetHStepSize = 1;
+        info.offsetVStepSize = 1;
+        info.imageHStepSize = 1;
+        info.imageVStepSize = 1;
+        info.pixelFormatBitField = 0;
+        info.vendorPixelFormatBitField = 0;
+        info.packetSize = 0;
+        info.minPacketSize = 0;
+        info.maxPacketSize = 0;
+        info.percentage = 100.0f;
+        return info;
+    }
+
+    bool CameraDevice_avf::validateFormat7Settings(Format7Settings /*settings*/)
+    {
+        // AVF delivers whatever the device's active format gives us;
+        // we accept all settings and no-op on apply. Good enough for
+        // Phase 2/3 — the user can't actually change the size mid-stream.
+        return true;
+    }
+
+    void CameraDevice_avf::setFormat7Configuration(Format7Settings /*settings*/,
+                                                   float /*percentSpeed*/)
+    {
+        // No-op: AVF format selection is a future enhancement.
+    }
+
+    PixelFormatList CameraDevice_avf::getListOfSupportedPixelFormats(
+        ImageMode /*imgMode*/)
+    {
+        PixelFormatList list;
+        list.push_back(PIXEL_FORMAT_MONO8);
+        return list;
+    }
+
+    TriggerType CameraDevice_avf::getTriggerType()
+    {
+        return TRIGGER_INTERNAL;
+    }
+
+    ImageInfo CameraDevice_avf::getImageInfo()
+    {
+        ImageInfo info;
+        info.rows = height_;
+        info.cols = width_;
+        info.stride = width_;  // MONO8 packed
+        info.dataSize = width_ * height_;
+        info.pixelFormat = PIXEL_FORMAT_MONO8;
+        return info;
     }
 
 }
