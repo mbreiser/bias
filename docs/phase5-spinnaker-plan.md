@@ -15,7 +15,7 @@ Locked in with Reiser at end of previous session:
 
 | Dimension | Target |
 |---|---|
-| Camera | **Flea3-class or older** FLIR (see compatibility caveat below) |
+| Camera | **Point Grey / FLIR Flea3 USB3** (FL3-U3-* family, Spinnaker-supported) |
 | Count | **Single camera** (no multi-camera workload) |
 | Profile | **~1 MP @ ~100 fps** (e.g. 1280×1024 @ 100 fps — a classic behavioral rate) |
 | Duration | **~30 min sustained per run** |
@@ -27,34 +27,32 @@ uFMF compression. With good sparse-foreground uFMF compression (5–20 %)
 that drops to 12–46 GB. Either way the SSD needs to sustain the write
 rate and the filesystem needs headroom for the uncompressed fallback case.
 
-### ⚠ Camera compatibility caveat — verify before writing any code
+### Camera specifics to confirm when the hardware is hooked up
 
-"Flea3 or older" spans two generations with very different SDK paths:
+Flea3 USB3 is Spinnaker-supported — Teledyne lists FL3-U3 models in the
+4.x-supported list and BIAS's existing `src/backend/spin/` code was
+written against exactly this hardware class on Windows. So there's no
+fundamental SDK-compatibility risk. But the exact **FL3-U3 variant**
+(FL3-U3-13S2M-CS vs FL3-U3-32S2M-CS vs FL3-U3-88S2C-C, etc.) determines
+native max fps, sensor size, and whether the "1280×1024 @ 100 fps"
+target is below the camera's ceiling or at it. When the camera is
+plugged in, capture the model by running:
 
-| Camera | Bus | Primary SDK | Spinnaker 4.3 support? |
-|---|---|---|---|
-| **Flea3 (FL3-*)** | USB3 | Spinnaker / FlyCapture2 | Probably yes (most Spinnaker-supported) — verify |
-| **Flea2 (FL2-*)** | FireWire or USB2 | FlyCapture2 or libdc1394 | **Likely NO** — Spinnaker dropped FireWire |
-| Earlier "Flea" | FireWire | libdc1394 | No |
+```sh
+system_profiler SPUSBDataType | grep -iA 3 'flea\|flir\|Point Grey'
+# or, more authoritatively:
+DYLD_LIBRARY_PATH=/Applications/Spinnaker/lib /Applications/Spinnaker/bin/Enumeration
+```
 
-On Apple Silicon Macs there is **no FireWire hardware** and no macOS
-FireWire stack (deprecated years ago), so any FireWire-era camera is
-a hard stop. A USB3 Flea3 should work; anything else requires a
-different plan entirely:
+and paste the output into `docs/phase5-performance.md` alongside the
+measurements.
 
-- If the camera is Spinnaker-incompatible → either stay on Linux/Windows
-  for that rig, OR buy a Blackfly S USB3 (current-gen replacement,
-  cheap and well-supported).
-- **Step 5.0 below (the `Enumeration` smoke test) resolves this.** If
-  `Enumeration` sees the camera, we're fine; if it prints "no cameras"
-  while USB shows the device connected, we're probably looking at a
-  support-dropped model.
-
-Please run `system_profiler SPUSBDataType | grep -iA 3 flea\|point\|flir`
-(or equivalent) at the start of the next session to record exactly
-which model we're dealing with. The answer shapes what "production rate"
-even means (Flea3 native is ~150 fps, Flea2 is ~60 fps, old Flea is
-~30 fps — the 100 fps target only applies to the USB3 generation).
+**Blocked on cable as of 2026-04-24.** Reiser is missing the USB3
+micro-B or similar Flea3-side cable; camera testing has to wait until
+that's in hand. But — **Phase 5 is NOT fully blocked**. The next agent
+can execute steps 5.1 and 5.2 below (CMake module + compile against
+Spinnaker 4.3 with camera-drift fixes) with zero hardware, because the
+SDK itself is installed. Steps 5.0, 5.3, 5.4, 5.5 need the camera.
 
 ## Current state
 
@@ -127,25 +125,31 @@ sudo installer -pkg ~/Downloads/Spinnaker-X.Y.Z.pkg -target /
 
 ## Exact next steps (in order)
 
-### Step 5.0 — SDK-level smoke test (do before touching BIAS code)
+### Step 5.0 — SDK-level smoke test (requires camera + cable)
 
-Plug the FLIR camera in, then run:
+**Prerequisite: USB3 cable + camera plugged in.** If the cable isn't
+here yet, skip to step 5.1 — compile work can proceed without hardware.
+
+Once the camera is connected:
 
 ```sh
 DYLD_LIBRARY_PATH=/Applications/Spinnaker/lib \
     /Applications/Spinnaker/bin/Enumeration 2>&1 | head -50
 ```
 
-If that prints the camera's vendor / model / serial — the SDK + USB3 +
-camera stack is working and we can proceed. If it prints `SPINNAKER_ERR_*`
-or zero cameras — fix that first (cable, TCC camera permission for the
-binary, system extension approval) because BIAS sits on top of this and
-won't magically succeed where the example fails.
+Success: the FL3-U3-* model, vendor, and serial print. Failure: a
+`SPINNAKER_ERR_*` code or zero cameras — fix at the SDK level first
+(cable, USB3 port — must be SS-blue or USB-C via a USB3 adapter, TCC
+camera permission for the binary, any system-extension approval
+dialogs). BIAS sits on top of this and won't work where the SDK's own
+example fails.
 
-Also worth confirming `/Applications/Spinnaker/apps/SpinView_QT.app`
-shows a live preview — that's the "no BIAS involved" ground truth.
+Also confirm `/Applications/Spinnaker/apps/SpinView_QT.app` shows a live
+preview — that's the "no BIAS involved" ground truth and rules out any
+BIAS-side issues when debugging later. Capture the exact model string
+in `docs/phase5-performance.md`.
 
-### Step 5.1 — CMake: teach `FindSpinnaker.cmake` about macOS
+### Step 5.1 — CMake: teach `FindSpinnaker.cmake` about macOS *(no hardware needed)*
 
 [`cmake/Modules/FindSpinnaker.cmake`](../cmake/Modules/FindSpinnaker.cmake)
 currently has Windows + Linux branches. Add an `APPLE` branch that sets:
@@ -163,7 +167,7 @@ set(Spinnaker_LIBRARIES ${Spinnaker_LIBRARY_C})
 (Match the existing module's variable-naming convention — check what
 `src/backend/spin/CMakeLists.txt` uses before inventing new names.)
 
-### Step 5.2 — Build `-Dwith_spin=ON`
+### Step 5.2 — Build `-Dwith_spin=ON` *(no hardware needed)*
 
 ```sh
 cd build
