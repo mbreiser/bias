@@ -9,6 +9,53 @@ this phase yet; branch head is `d01e3f0` (Phase 3 validation doc).
 whether a Mac can run the lab's FLIR-camera behavioral-video experiments
 at production rates. Phase 5 is not polish; it's the feasibility test.
 
+## The target the feasibility test has to hit
+
+Locked in with Reiser at end of previous session:
+
+| Dimension | Target |
+|---|---|
+| Camera | **Flea3-class or older** FLIR (see compatibility caveat below) |
+| Count | **Single camera** (no multi-camera workload) |
+| Profile | **~1 MP @ ~100 fps** (e.g. 1280×1024 @ 100 fps — a classic behavioral rate) |
+| Duration | **~30 min sustained per run** |
+| Trigger | **Both paths** — free-running AND external hardware trigger (Line0 TTL), because different lab rigs use each |
+
+Implied rough data rates: ~128 MB/s raw writes per camera at 1280×1024 ×
+100 fps × 1 B, i.e. ~230 GB for a 30 min session if we never get any
+uFMF compression. With good sparse-foreground uFMF compression (5–20 %)
+that drops to 12–46 GB. Either way the SSD needs to sustain the write
+rate and the filesystem needs headroom for the uncompressed fallback case.
+
+### ⚠ Camera compatibility caveat — verify before writing any code
+
+"Flea3 or older" spans two generations with very different SDK paths:
+
+| Camera | Bus | Primary SDK | Spinnaker 4.3 support? |
+|---|---|---|---|
+| **Flea3 (FL3-*)** | USB3 | Spinnaker / FlyCapture2 | Probably yes (most Spinnaker-supported) — verify |
+| **Flea2 (FL2-*)** | FireWire or USB2 | FlyCapture2 or libdc1394 | **Likely NO** — Spinnaker dropped FireWire |
+| Earlier "Flea" | FireWire | libdc1394 | No |
+
+On Apple Silicon Macs there is **no FireWire hardware** and no macOS
+FireWire stack (deprecated years ago), so any FireWire-era camera is
+a hard stop. A USB3 Flea3 should work; anything else requires a
+different plan entirely:
+
+- If the camera is Spinnaker-incompatible → either stay on Linux/Windows
+  for that rig, OR buy a Blackfly S USB3 (current-gen replacement,
+  cheap and well-supported).
+- **Step 5.0 below (the `Enumeration` smoke test) resolves this.** If
+  `Enumeration` sees the camera, we're fine; if it prints "no cameras"
+  while USB shows the device connected, we're probably looking at a
+  support-dropped model.
+
+Please run `system_profiler SPUSBDataType | grep -iA 3 flea\|point\|flir`
+(or equivalent) at the start of the next session to record exactly
+which model we're dealing with. The answer shapes what "production rate"
+even means (Flea3 native is ~150 fps, Flea2 is ~60 fps, old Flea is
+~30 fps — the 100 fps target only applies to the USB3 generation).
+
 ## Current state
 
 - [`docs/macos-dev-setup.md`](macos-dev-setup.md) — macOS build prerequisites.
@@ -185,14 +232,23 @@ Report the results in `docs/phase5-performance.md` with a table of
 ratio, thermal peak). That's the document that answers the original
 question: "can a Mac run these experiments?"
 
-### Step 5.5 — Trigger modes (optional, if rig uses external trigger)
+### Step 5.5 — Trigger modes (required per locked-in target: "both paths")
 
-- `cameraPtr_->setTriggerExternal()` path exists in BIAS but no AVF
-  implementation. On Spinnaker this maps to TriggerMode=On, TriggerSource=Line0.
-- Confirm external-trigger-driven capture produces frames timestamped
-  relative to the trigger (important for sync with stimulus hardware).
-- Free-running is fine for the initial feasibility test; add triggered
-  mode once free-running passes.
+Because the lab runs both triggered and free-running rigs, the harness
+has to exercise both Spinnaker code paths:
+
+- **Free-running**: default camera config, no Line-0 wiring required.
+  This is the simplest path and should pass first.
+- **External trigger**: `cameraPtr_->setTriggerExternal()` in BIAS maps
+  to Spinnaker's TriggerMode=On, TriggerSource=Line0, TriggerActivation=RisingEdge
+  (see existing `camera_device_spin.cpp` trigger code, which BIAS uses
+  on Windows today). Connect a TTL pulse source on Line0 — an Arduino
+  firing at 100 Hz is the cheapest bench setup. Confirm:
+    - Frame arrival rate matches the trigger rate (not the camera's
+      internal clock).
+    - Per-frame timestamps are monotonic and stable; jitter is small.
+    - Dropped frames stay at 0 under the trigger rate.
+- Update `docs/phase5-performance.md` with a separate section per mode.
 
 ## Things I'd do differently next time
 
